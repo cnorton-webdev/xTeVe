@@ -387,53 +387,60 @@ function calculateWrapperHeight() {
 }
 
 function changeChannelNumber(element) {
-
-  var dbID = element.parentNode.parentNode.id
-
-  var newNumber:number = parseFloat(element.value)
-  var channelNumbers:number[] = []
-  var data = SERVER["xepg"]["epgMapping"]
-  var channels = getObjKeys(data)
-
-  if (isNaN(newNumber)) {
-    alert("{{.alert.invalidChannelNumber}}")
-    return
-  }
-
-  channels.forEach(id => {
-
-    var channelNumber = parseFloat(data[id]["x-channelID"])
-    channelNumbers.push(channelNumber)
-
-  })
-
-  for (var i = 0; i < channelNumbers.length; i++) {
-     
-    if (channelNumbers.indexOf(newNumber) == -1) {
-      break
+    var dbID = element.parentNode.parentNode.id;
+    var newNumber = parseFloat(element.value);
+    var channelNumbers = [];
+    var data = SERVER["xepg"]["epgMapping"];
+    var channels = getObjKeys(data);
+    if (isNaN(newNumber)) {
+        alert("Invalid channel number");
+        return;
     }
-
-    if (Math.floor(newNumber) == newNumber) {
-      newNumber = newNumber + 1
+    channels.forEach(function (id) {
+        var channelNumber = parseFloat(data[id]["x-channelID"]);
+        channelNumbers.push(channelNumber);
+    });
+    channelNumbers.sort(function (a, b) { return a - b; });
+    var newChannel = newNumber;
+    var emptyChannel = newNumber;
+    for (var i = 0; i < channelNumbers.length; i++) {
+        if (channelNumbers.indexOf(newNumber) == -1) {
+            emptyChannel = newNumber;
+            break;
+        }
+        if (Math.floor(newNumber) == newNumber) {
+            newNumber = newNumber + 1;
+        }
+        else {
+            newNumber = newNumber + 0.1;
+            newNumber.toFixed(1);
+            newNumber = Math.round(newNumber * 10) / 10;
+        }
+    }
+    if (emptyChannel == newChannel) {
+        data[dbID]["x-channelID"] = newNumber.toString();
     } else {
-      newNumber = newNumber + 0.1;
-      newNumber.toFixed(1)
-      newNumber = Math.round(newNumber * 10) / 10
+        var prevName = "";
+        for (var i = newChannel; i <= emptyChannel; i++) {
+            for (var key in data) {
+				if(data.hasOwnProperty(key)){
+					if (data[key]['x-channelID'] == i && data[key]["x-name"] != prevName) {
+					    prevName = data[key]["x-name"];
+						data[key]["x-channelID"] = (i + 1).toString();
+						document.getElementById(key).querySelectorAll('input')[1].value = (i + 1);
+						break;
+					}
+				}
+            }
+        }
+        data[dbID]["x-channelID"] = newChannel.toString();
     }
-
-  }
- 
-  data[dbID]["x-channelID"] = newNumber.toString()
-  element.value = newNumber
-
-  console.log(data[dbID]["x-channelID"])
-
-  if (COLUMN_TO_SORT == 1) {
-    COLUMN_TO_SORT = -1
-    sortTable(1)
-  }
-
-  return
+    element.value = newChannel;
+    if (COLUMN_TO_SORT == 1) {
+        COLUMN_TO_SORT = -1;
+        sortTable(1);
+    }
+    return;
 }
 
 function backup() {

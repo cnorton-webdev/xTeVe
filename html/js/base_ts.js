@@ -282,15 +282,19 @@ function changeChannelNumber(element) {
     var data = SERVER["xepg"]["epgMapping"];
     var channels = getObjKeys(data);
     if (isNaN(newNumber)) {
-        alert("{{.alert.invalidChannelNumber}}");
+        alert("Invalid channel number");
         return;
     }
     channels.forEach(function (id) {
         var channelNumber = parseFloat(data[id]["x-channelID"]);
         channelNumbers.push(channelNumber);
     });
+    channelNumbers.sort(function (a, b) { return a - b; });
+    var newChannel = newNumber;
+    var emptyChannel = newNumber;
     for (var i = 0; i < channelNumbers.length; i++) {
         if (channelNumbers.indexOf(newNumber) == -1) {
+            emptyChannel = newNumber;
             break;
         }
         if (Math.floor(newNumber) == newNumber) {
@@ -302,9 +306,25 @@ function changeChannelNumber(element) {
             newNumber = Math.round(newNumber * 10) / 10;
         }
     }
-    data[dbID]["x-channelID"] = newNumber.toString();
-    element.value = newNumber;
-    console.log(data[dbID]["x-channelID"]);
+    if (emptyChannel == newChannel) {
+        data[dbID]["x-channelID"] = newNumber.toString();
+    } else {
+        var prevName = "";
+        for (var i = newChannel; i <= emptyChannel; i++) {
+            for (var key in data) {
+				if(data.hasOwnProperty(key)){
+					if (data[key]['x-channelID'] == i && data[key]["x-name"] != prevName) {
+					    prevName = data[key]["x-name"];
+						data[key]["x-channelID"] = (i + 1).toString();
+						document.getElementById(key).querySelectorAll('input')[1].value = (i + 1);
+						break;
+					}
+				}
+            }
+        }
+        data[dbID]["x-channelID"] = newChannel.toString();
+    }
+    element.value = newChannel;
     if (COLUMN_TO_SORT == 1) {
         COLUMN_TO_SORT = -1;
         sortTable(1);
